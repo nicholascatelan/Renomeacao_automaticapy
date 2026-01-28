@@ -1,71 +1,95 @@
 import customtkinter as ctk
-from tkinter import filedialog, messagebox
 import os
 import shutil
+import windnd  # Biblioteca para Drag & Drop no Windows
+from tkinter import messagebox
 
-# Configuração visual
-ctk.set_appearance_mode("System")
-ctk.set_default_color_theme("blue")
-
-class App(ctk.CTk):
+class OrganizadorLotes(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Organizador de Lotes - Leilão")
-        self.geometry("500x350")
+        self.title("Organizador de Leilão - Arrastar e Soltar")
+        self.geometry("600x550")
+        self.arquivos_selecionados = []
 
-        # Interface
-        self.label = ctk.CTkLabel(self, text="Organizador de Fotos", font=("Roboto", 24))
-        self.label.pack(pady=20)
+        # Título
+        self.label = ctk.CTkLabel(self, text="Organizador de Lotes", font=("Roboto", 24, "bold"))
+        self.label.pack(pady=(20, 10))
 
-        self.entry_nome = ctk.CTkEntry(self, placeholder_text="Nome do Lote (Ex: Lote 001)", width=300)
-        self.entry_nome.pack(pady=10)
+        # Nome do Lote
+        self.entry_nome = ctk.CTkEntry(self, placeholder_text="Ex: Lote 01 - Corolla", width=450, height=45)
+        self.entry_nome.pack(pady=15)
 
-        self.btn_selecionar = ctk.CTkButton(self, text="Selecionar Fotos e Organizar", command=self.processar)
-        self.btn_selecionar.pack(pady=20)
+        # Caixa de Visualização
+        self.caixa_drop = ctk.CTkTextbox(self, width=500, height=200, border_width=2, border_color="#1f538d")
+        self.caixa_drop.pack(pady=10)
+        self.caixa_drop.insert("0.0", "ARRASTE AS FOTOS DO WINDOWS PARA QUALQUER LUGAR DA JANELA...")
+        self.caixa_drop.configure(state="disabled")
 
-        self.status_label = ctk.CTkLabel(self, text="Aguardando ação...", font=("Roboto", 12))
-        self.status_label.pack(side="bottom", pady=10)
+        # Botões
+        self.btn_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.btn_frame.pack(pady=20)
+
+        self.btn_limpar = ctk.CTkButton(self.btn_frame, text="Limpar", fg_color="#A12D2D", command=self.limpar)
+        self.btn_limpar.pack(side="left", padx=10)
+
+        self.btn_ok = ctk.CTkButton(self.btn_frame, text="Organizar Lote", fg_color="#2DA14F", command=self.processar)
+        self.btn_ok.pack(side="left", padx=10)
+
+        # Registrar o Drag & Drop (Versão simplificada sem nomes de argumentos problemáticos)
+        windnd.hook_dropfiles(self, self.ao_soltar)
+
+    def ao_soltar(self, files):
+        # Converte bytes para string e limpa caminhos
+        novos = []
+        extensoes_validas = ('.jpg', '.jpeg', '.png', '.webp', '.bmp')
+        
+        for f in files:
+            caminho = f.decode('ansi')
+            if caminho.lower().endswith(extensoes_validas):
+                novos.append(caminho)
+
+        if novos:
+            self.arquivos_selecionados.extend(novos)
+            self.caixa_drop.configure(state="normal")
+            self.caixa_drop.delete("0.0", "end")
+            for f in self.arquivos_selecionados:
+                self.caixa_drop.insert("end", f"✔ {os.path.basename(f)}\n")
+            self.caixa_drop.configure(state="disabled")
+        else:
+            messagebox.showwarning("Aviso", "Arraste apenas arquivos de imagem!")
+
+    def limpar(self):
+        self.arquivos_selecionados = []
+        self.caixa_drop.configure(state="normal")
+        self.caixa_drop.delete("0.0", "end")
+        self.caixa_drop.insert("0.0", "ARRASTE AS FOTOS PARA CÁ...")
+        self.caixa_drop.configure(state="disabled")
 
     def processar(self):
-        nome_lote = self.entry_nome.get().strip()
+        nome = self.entry_nome.get().strip()
+        if not nome or not self.arquivos_selecionados:
+            messagebox.showwarning("Erro", "Preencha o nome do lote e arraste as fotos!")
+            return
+
+        # Pasta de destino
+        caminho_base = os.path.dirname(os.path.abspath(__file__))
+        pasta_lotes = os.path.join(caminho_base, "LOTES_PRONTOS", nome)
         
-        if not nome_lote:
-            messagebox.showwarning("Aviso", "Por favor, digite o nome do lote primeiro!")
-            return
-
-        # Abre seletor de arquivos
-        arquivos = filedialog.askopenfilenames(
-            title=f"Selecione as fotos para o {nome_lote}",
-            filetypes=[("Imagens", "*.jpg *.jpeg *.png *.webp")]
-        )
-
-        if not arquivos:
-            return
-
         try:
-            # Define o local de destino (onde o programa está rodando)
-            pasta_destino = os.path.join(os.getcwd(), nome_lote)
-            
-            if not os.path.exists(pasta_destino):
-                os.makedirs(pasta_destino)
+            os.makedirs(pasta_lotes, exist_ok=True)
+            for i, caminho_origem in enumerate(self.arquivos_selecionados, 1):
+                ext = os.path.splitext(caminho_origem)[1]
+                novo_nome = f"{nome}_{i}{ext}"
+                destino = os.path.join(pasta_lotes, novo_nome)
+                shutil.copy2(caminho_origem, destino)
 
-            for i, caminho_original in enumerate(arquivos, 1):
-                extensao = os.path.splitext(caminho_original)[1]
-                # Novo nome: Lote 001_1.jpg, Lote 001_2.jpg...
-                novo_nome = f"{nome_lote}_{i}{extensao}"
-                destino_final = os.path.join(pasta_destino, novo_nome)
-                
-                # Copia o arquivo (melhor que mover para evitar perdas se algo der erro)
-                shutil.copy2(caminho_original, destino_final)
-
-            messagebox.showinfo("Sucesso!", f"Lote criado com sucesso!\n{len(arquivos)} fotos organizadas na pasta '{nome_lote}'.")
+            messagebox.showinfo("Sucesso!", f"Lote '{nome}' organizado com sucesso!")
+            self.limpar()
             self.entry_nome.delete(0, 'end')
-            self.status_label.configure(text=f"Última ação: {nome_lote} finalizado.")
-
         except Exception as e:
-            messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
+            messagebox.showerror("Erro", f"Erro: {e}")
 
 if __name__ == "__main__":
-    app = App()
+    app = OrganizadorLotes()
     app.mainloop()
