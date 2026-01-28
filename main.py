@@ -66,25 +66,29 @@ class OrganizadorPastas(ctk.CTk):
         self.caixa_drop.insert("0.0", "ARRASTE AS FOTOS PARA CÁ...")
         self.caixa_drop.configure(state="disabled")
 
+    import sys # Adicione isso no topo do arquivo
+
     def processar(self):
         nome = self.entry_nome.get().strip()
         if not nome or not self.arquivos_selecionados:
-            messagebox.showwarning("Erro", "Preencha o nome da pasta e arraste as fotos!")
+            messagebox.showwarning("Erro", "Preencha o nome do lote e arraste as fotos!")
             return
 
-        # Pasta de destino
-        caminho_base = os.path.dirname(os.path.abspath(__file__))
-        pastas = os.path.join(caminho_base, "PASTA_PRONTA", nome)
+        # ESTA LINHA É A CHAVE: Pega a pasta onde o .exe está de verdade
+        caminho_do_exe = os.path.dirname(sys.executable)
+        
+        # Criamos a pasta LOTES_PRONTOS lá
+        pasta_lotes = os.path.join(caminho_do_exe, "LOTES_PRONTOS", nome)
         
         try:
-            os.makedirs(pastas, exist_ok=True)
+            os.makedirs(pasta_lotes, exist_ok=True)
             for i, caminho_origem in enumerate(self.arquivos_selecionados, 1):
                 ext = os.path.splitext(caminho_origem)[1]
                 novo_nome = f"{nome}_{i}{ext}"
-                destino = os.path.join(pastas, novo_nome)
+                destino = os.path.join(pasta_lotes, novo_nome)
                 shutil.copy2(caminho_origem, destino)
 
-            messagebox.showinfo("Sucesso!", f"Pasta '{nome}' organizado com sucesso!")
+            messagebox.showinfo("Sucesso!", f"Lote organizado!\nSalvo em: {pasta_lotes}")
             self.limpar()
             self.entry_nome.delete(0, 'end')
         except Exception as e:
