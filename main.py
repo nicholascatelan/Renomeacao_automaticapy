@@ -4,16 +4,16 @@ import shutil
 import windnd  # Biblioteca para Drag & Drop no Windows
 from tkinter import messagebox
 
-class OrganizadorLotes(ctk.CTk):
+class OrganizadorPastas(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Organizador de Leilão - Arrastar e Soltar")
+        self.title("Organizador de fotos - Arrastar e Soltar")
         self.geometry("600x550")
         self.arquivos_selecionados = []
 
         # Título
-        self.label = ctk.CTkLabel(self, text="Organizador de Lotes", font=("Roboto", 24, "bold"))
+        self.label = ctk.CTkLabel(self, text="Organizador de Fotos", font=("Roboto", 24, "bold"))
         self.label.pack(pady=(20, 10))
 
         # Nome do Lote
@@ -33,7 +33,7 @@ class OrganizadorLotes(ctk.CTk):
         self.btn_limpar = ctk.CTkButton(self.btn_frame, text="Limpar", fg_color="#A12D2D", command=self.limpar)
         self.btn_limpar.pack(side="left", padx=10)
 
-        self.btn_ok = ctk.CTkButton(self.btn_frame, text="Organizar Lote", fg_color="#2DA14F", command=self.processar)
+        self.btn_ok = ctk.CTkButton(self.btn_frame, text="Organizar Pastas", fg_color="#2DA14F", command=self.processar)
         self.btn_ok.pack(side="left", padx=10)
 
         # Registrar o Drag & Drop (Versão simplificada sem nomes de argumentos problemáticos)
@@ -69,12 +69,12 @@ class OrganizadorLotes(ctk.CTk):
     def processar(self):
         nome = self.entry_nome.get().strip()
         if not nome or not self.arquivos_selecionados:
-            messagebox.showwarning("Erro", "Preencha o nome do lote e arraste as fotos!")
+            messagebox.showwarning("Erro", "Preencha o nome da pasta e arraste as fotos!")
             return
 
         # Pasta de destino
         caminho_base = os.path.dirname(os.path.abspath(__file__))
-        pasta_lotes = os.path.join(caminho_base, "LOTES_PRONTOS", nome)
+        pasta_lotes = os.path.join(caminho_base, "PASTA_PRONTA", nome)
         
         try:
             os.makedirs(pasta_lotes, exist_ok=True)
@@ -84,12 +84,12 @@ class OrganizadorLotes(ctk.CTk):
                 destino = os.path.join(pasta_lotes, novo_nome)
                 shutil.copy2(caminho_origem, destino)
 
-            messagebox.showinfo("Sucesso!", f"Lote '{nome}' organizado com sucesso!")
+            messagebox.showinfo("Sucesso!", f"Pasta '{nome}' organizado com sucesso!")
             self.limpar()
             self.entry_nome.delete(0, 'end')
         except Exception as e:
             messagebox.showerror("Erro", f"Erro: {e}")
 
 if __name__ == "__main__":
-    app = OrganizadorLotes()
+    app = OrganizadorPastas()
     app.mainloop()
