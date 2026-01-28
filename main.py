@@ -74,14 +74,14 @@ class OrganizadorPastas(ctk.CTk):
 
         # Pasta de destino
         caminho_base = os.path.dirname(os.path.abspath(__file__))
-        pasta_lotes = os.path.join(caminho_base, "PASTA_PRONTA", nome)
+        pastas = os.path.join(caminho_base, "PASTA_PRONTA", nome)
         
         try:
-            os.makedirs(pasta_lotes, exist_ok=True)
+            os.makedirs(pastas, exist_ok=True)
             for i, caminho_origem in enumerate(self.arquivos_selecionados, 1):
                 ext = os.path.splitext(caminho_origem)[1]
                 novo_nome = f"{nome}_{i}{ext}"
-                destino = os.path.join(pasta_lotes, novo_nome)
+                destino = os.path.join(pastas, novo_nome)
                 shutil.copy2(caminho_origem, destino)
 
             messagebox.showinfo("Sucesso!", f"Pasta '{nome}' organizado com sucesso!")
